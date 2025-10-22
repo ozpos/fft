@@ -20,21 +20,33 @@ for each 'connected device'
             update device.connectionStatus to // CONNECTED & save timestamp to device.status.lastUpdated
 */
 
-// For list of devices
+// Example calls
+// Lists of connected devices
 DS18B20({topic: "devices", payload: allConnected}); //  oneConnected/otherConnected/noneConnected
+DS18B20({topic: "devices", payload: oneConnected}); //  oneConnected/otherConnected/noneConnected
+DS18B20({topic: "devices", payload: otherConnected}); //  oneConnected/otherConnected/noneConnected
+DS18B20({topic: "devices", payload: noneConnected}); //  oneConnected/otherConnected/noneConnected
 // For device read
 DS18B20({topic: "read_next", payload: okReading});  //  badReading
+DS18B20({topic: "read_next", payload: badReading});  //  badReading
+
+function connected(dev){
+    return dev.connectionState === "CONNECTED";
+}
 
 function DS18B20 (msg) {
     // get last known devices and data from persistent flow storage.
     let ft = flow.get("Temperatures.DS18B20") || [];
+    let currentlyConnected = ft.filter(connected);
+    let readNextDeviceIndex = flow.get("Temperatures.DS18B20_readNextDeviceName") || (ft.length > 0 ? 0 : -1);
 
     if (ft.length === 0 && msg.topic !== "devices")
         return;
 
     switch (msg.topic) {
         case "devices":
-            let currentlyConnected = new Devices(msg.payload).devices;
+            // Here periodically to register connected devices and update old not now connected status.
+            currentlyConnected = new Devices(msg.payload).devices;
             // Add new devices and update the connected state of existing devices.
             node.warn("devices - 0 currentlyConnected=" + JSON.stringify(currentlyConnected));
 
@@ -55,7 +67,7 @@ function DS18B20 (msg) {
 
                 function nameMatch(device) {
                     //node.warn("nameMatch - device=" + JSON.stringify(device));
-                    device.name == name
+                    device.name === name
                 }
             })
             node.warn("devices - 1");
@@ -75,7 +87,7 @@ function DS18B20 (msg) {
 
                 function nameMatch(device) {
                     node.warn("nameMatch - device=" + JSON.stringify(device));
-                    device.name == name
+                    device.name === name
                 }
             });
 
@@ -84,14 +96,24 @@ function DS18B20 (msg) {
             flow.set("Temperatures.DS18B20", ft);
             break;
         case "read_next":
-            // TODO
-            let deviceReading = Reading(msg.payload);
-
+            // Here with data as a result of a read on currentlyConnected[readNextDeviceIndex]
+            // TODO - how to merge Reading into ft[index]
+            if (readNextDeviceIndex > 0 &&  currentlyConnected.length > 0) {
+                ft[readNextDeviceIndex] = new Reading(msg.payload);
+                readNextDeviceIndex++;
+                if (readNextDeviceIndex >= currentlyConnected.length)
+                    readNextDeviceIndex = 0;
+            }else{
+                readNextDeviceIndex = currentlyConnected.length - 1;
+            }
+            flow.set("temperatures.DS18B20_readDeviceIndex", readNextDeviceIndex);
+            if (readNextDeviceIndex >= 0)
+                // TODO schedule  an os command to read device and trigger
+                node.send([]);
             break;
         default:
             break;
     }
-    return;
 }
 // Pushed from jetbrains IDE
 function Reading(data){
@@ -102,10 +124,11 @@ function Reading(data){
         switch(idx){
             case 0:
                 //look for 'YES' in 1st line of data
-                return; // "YES/NO"
+                return data.indexOf("YES") > 0 ? "YES" : "NO"; // "YES/NO"
             case 1:
                 //look fot 't = 12345' where 12345 is the temperature in 1/1000s.
-                return; // "12345"
+                let t = data.split("t = ");
+                return t[1].split("\n")[0];
             default:
                 break;
         }
@@ -121,7 +144,7 @@ function Devices(data) {
     node.warn("data=" + data + " devices - 0.1 ");
 
 
-    devs.forEach((name, index, array) => {
+    devs.forEach((name) => {
         node.warn("devices - 0.1.1");
         let dev = {[name]: {
                 desc: "",
