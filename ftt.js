@@ -57,6 +57,10 @@ function DS18B20 (msg) {
                     // No longer connected
                     node.warn("ft dis");
                     name.connectionState = "DISCONNECTED";
+                    // TODO ERROR - name has the correct obj structure
+                    // I can set name.connectionState
+                    // but not name.status.lastUpdated
+                    //{ "__enc__": true, "type": "error", "data": { "name": "TypeError", "message": "Cannot set properties of undefined (setting 'lastUpdated')", "stack": "TypeError: Cannot set properties of undefined (setting 'lastUpdated')\n    at Function node:d36d164207a7f518 [DS18B20]:47:33\n    at Array.forEach (<anonymous>)\n    at Function node:d36d164207a7f518 [DS18B20]:36:12\n    at Function node:d36d164207a7f518 [DS18B20]:421:3\n    at Script.runInContext (node:vm:149:12)\n    at processMessage (/usr/lib/node_modules/node-red/node_modules/@node-red/nodes/core/function/10-function.js:430:37)\n    at FunctionNode._inputCallback (/usr/lib/node_modules/node-red/node_modules/@node-red/nodes/core/function/10-function.js:348:17)\n    at /usr/lib/node_modules/node-red/node_modules/@node-red/runtime/lib/nodes/Node.js:214:26\n    at Object.trigger (/usr/lib/node_modules/node-red/node_modules/@node-red/util/lib/hooks.js:166:13)" } }
                     node.warn("ft dis2 " + JSON.stringify(name));
                     let sta = ft[index].status;
                     sta.lastUpdated = new Date();
@@ -70,7 +74,7 @@ function DS18B20 (msg) {
             })
             node.warn("devices - 1");
 
-            // Update the connectionState of existing devices
+            // Update the connectionStatus of existing devices
             // and create new ones.
             currentlyConnected.forEach((name) => {
                 node.warn("devices - 1-name=" + JSON.stringify(name));
@@ -96,12 +100,12 @@ function DS18B20 (msg) {
         case "read_next":
             // Here with data as a result of a read on currentlyConnected[readNextDeviceIndex]
             // TODO - how to merge Reading into ft[index]
-            if (readNextDeviceIndex > 0 &&  currentlyConnected.length > 0) {
+            if (readNextDeviceIndex > 0 && currentlyConnected.length > 0) {
                 ft[readNextDeviceIndex] = new Reading(msg.payload);
                 readNextDeviceIndex++;
                 if (readNextDeviceIndex >= currentlyConnected.length)
                     readNextDeviceIndex = 0;
-            }else{
+            } else {
                 readNextDeviceIndex = currentlyConnected.length - 1;
             }
             flow.set("temperatures.DS18B20_readDeviceIndex", readNextDeviceIndex);
@@ -112,65 +116,68 @@ function DS18B20 (msg) {
         default:
             break;
     }
-}
+
 // Pushed from jetbrains IDE
-function Reading(data){
-    this.crc = fromData(data, 0);
-    this.temperature = fromData(data,1);
+    function Reading(data) {
+        this.crc = fromData(data, 0);
+        this.temperature = fromData(data, 1);
 
-    function fromData(data, idx){
-        switch(idx){
-            case 0:
-                //look for 'YES' in 1st line of data
-                return data.indexOf("YES") > 0 ? "YES" : "NO"; // "YES/NO"
-            case 1:
-                //look fot 't = 12345' where 12345 is the temperature in 1/1000s.
-                let t = data.split("t = ");
-                return t[1].split("\n")[0];
-            default:
-                break;
+        function fromData(data, idx) {
+            switch (idx) {
+                case 0:
+                    //look for 'YES' in 1st line of data
+                    return data.indexOf("YES") > 0 ? "YES" : "NO"; // "YES/NO"
+                case 1:
+                    //look fot 't = 12345' where 12345 is the temperature in 1/1000s.
+                    let t = data.split("t = ");
+                    return t[1].split("\n")[0];
+                default:
+                    break;
+            }
         }
+        return this;
     }
-    return this;
-}
 // Return array of device objects
-function Devices(data) {
-    let devs = String(data).split("\n").filter(zeroLength);
-    //let objs = devs.filter(zeroLength).map(name => ({ name }));    //arr.forEach((element, index) => {
-    this.raw = data;                    //      obj[`key${index}`] = element;
-    this.devices = [];                  //  });
-    node.warn("data=" + data + " devices - 0.1 ");
+    function Devices(data) {
+        let devs = String(data).split("\n").filter(zeroLength);
+        //let objs = devs.filter(zeroLength).map(name => ({ name }));    //arr.forEach((element, index) => {
+        this.raw = data;                    //      obj[`key${index}`] = element;
+        this.devices = [];                  //  });
+        node.warn("data=" + data + " devices - 0.1 ");
 
 
-    devs.forEach((name) => {
-        node.warn("devices - 0.1.1");
-        let dev = {[name]: {
-                desc: "",
-                name: name,
-                rawData: data,
-                status: {
-                    crc: "",
-                    crcOKCount: 0,
-                    crcERRORCount: 0,
-                    created: new Date(),
-                    lastUpdated: new Date(),
-                    previousOKUpdated: new Date(),
-                    previousOKTemperature: null,
-                    rawData: ""
-                },
-                connectionState: "CONNECTED", // CONNECTED/DISCONNECTED
-                temperatureState: "UNKNOWN", // OK/ERROR/UNKNOWN
-                temperature: null
-            }};
-        this.devices.push(dev);
+        devs.forEach((name) => {
+            node.warn("devices - 0.1.1");
+            let dev = {
+                [name]: {
+                    desc: "",
+                    name: name,
+                    rawData: data,
+                    status: {
+                        crc: "",
+                        crcOKCount: 0,
+                        crcERRORCount: 0,
+                        created: new Date(),
+                        lastUpdated: new Date(),
+                        previousOKUpdated: new Date(),
+                        previousOKTemperature: null,
+                        rawData: ""
+                    },
+                    connectionState: "CONNECTED", // CONNECTED/DISCONNECTED
+                    temperatureState: "UNKNOWN", // OK/ERROR/UNKNOWN
+                    temperature: null
+                }
+            };
+            this.devices.push(dev);
 
-    });
-    return this;
-}
+        });
+        return this;
+    }
 
-function zeroLength(str) {
-    return str.length > 0;
-}
-function connected(dev){
-    return dev.connectionState === "CONNECTED";
-}
+    function zeroLength(str) {
+        return str.length > 0;
+    }
+    function connected(dev) {
+        return dev.connectionState === "CONNECTED";
+    }
+    return;
