@@ -135,8 +135,10 @@ function DS18B20 (msg) {
                     break;
             }
         }
+
         return this;
     }
+
 // Return array of device objects
     function Devices(data) {
         let devs = String(data).split("\n").filter(zeroLength);
@@ -177,7 +179,10 @@ function DS18B20 (msg) {
     function zeroLength(str) {
         return str.length > 0;
     }
+
     function connected(dev) {
         return dev.connectionState === "CONNECTED";
     }
+
     return;
+}
