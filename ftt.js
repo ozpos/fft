@@ -64,7 +64,7 @@ function DS18B20 (msg) {
             currentlyConnected.forEach((name) => {
                 node.warn("devices - 1-name=" + JSON.stringify(name));
                 let known = ft.filter(nameMatch);
-                if (known.length == 0) {
+                if (known.length === 0) {
                     node.warn("not found - 1");
                     ft.push(name);
                     flow.set("Temperatures.DS18B20", ft);
