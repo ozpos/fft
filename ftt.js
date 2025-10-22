@@ -93,7 +93,7 @@ function DS18B20 (msg) {
     }
     return;
 }
-
+// Pushed from jetbrains IDE
 function Reading(data){
     this.crc = fromData(data, 0);
     this.temperature = fromData(data,1);
