@@ -13,13 +13,13 @@ let badReading = "4e 01 55 05 7f a5 81 66 78 : crc=78 NO\n4e 01 55 05 7f a5 81 6
 /*
 for each previously captured device
     if not in connected devices
-        update device.connectionStatus to // DISCONNECTED
+        update device.connectionState to // DISCONNECTED
 
 for each 'connected device'
          if new
             create
          else
-            update device.connectionStatus to // CONNECTED & save timestamp to device.status.lastUpdated
+            update device.connectionState to // CONNECTED & save timestamp to device.status.lastUpdated
 */
 
 // Example calls
@@ -31,10 +31,6 @@ DS18B20({topic: "devices", payload: noneConnected}); //  oneConnected/otherConne
 // For device read
 DS18B20({topic: "read_next", payload: okReading});  //  badReading
 DS18B20({topic: "read_next", payload: badReading});  //  badReading
-
-function connected(dev){
-    return dev.connectionState === "CONNECTED";
-}
 
 function DS18B20 (msg) {
     // get last known devices and data from persistent flow storage.
@@ -60,7 +56,7 @@ function DS18B20 (msg) {
                 if (currentlyConnected.filter(nameMatch).length === 0) {
                     // No longer connected
                     node.warn("ft dis");
-                    name.connectionStatus = "DISCONNECTED";
+                    name.connectionState = "DISCONNECTED";
                     node.warn("ft dis2 " + JSON.stringify(name));
                     let sta = ft[index].status;
                     sta.lastUpdated = new Date();
@@ -74,7 +70,7 @@ function DS18B20 (msg) {
             })
             node.warn("devices - 1");
 
-            // Update the connectionStatus of existing devices
+            // Update the connectionState of existing devices
             // and create new ones.
             currentlyConnected.forEach((name) => {
                 node.warn("devices - 1-name=" + JSON.stringify(name));
@@ -174,4 +170,7 @@ function Devices(data) {
 
 function zeroLength(str) {
     return str.length > 0;
+}
+function connected(dev){
+    return dev.connectionState === "CONNECTED";
 }
