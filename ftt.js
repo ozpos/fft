@@ -19,6 +19,7 @@ for each 'connected device'
          else
             update device.connectionStatus to // CONNECTED & save timestamp to device.status.lastUpdated
 */
+
 // For list of devices
 DS18B20({topic: "devices", payload: allConnected}); //  oneConnected/otherConnected/noneConnected
 // For device read
@@ -92,6 +93,7 @@ function DS18B20 (msg) {
     }
     return;
 }
+
 function Reading(data){
     this.crc = fromData(data, 0);
     this.temperature = fromData(data,1);
