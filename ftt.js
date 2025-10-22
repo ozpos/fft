@@ -25,12 +25,12 @@ for each 'connected device'
 // Example calls
 // Lists of connected devices
 DS18B20({topic: "devices", payload: allConnected}); //  oneConnected/otherConnected/noneConnected
-DS18B20({topic: "devices", payload: oneConnected}); //  oneConnected/otherConnected/noneConnected
-DS18B20({topic: "devices", payload: otherConnected}); //  oneConnected/otherConnected/noneConnected
-DS18B20({topic: "devices", payload: noneConnected}); //  oneConnected/otherConnected/noneConnected
+//DS18B20({topic: "devices", payload: oneConnected}); //  oneConnected/otherConnected/noneConnected
+//DS18B20({topic: "devices", payload: otherConnected}); //  oneConnected/otherConnected/noneConnected
+//DS18B20({topic: "devices", payload: noneConnected}); //  oneConnected/otherConnected/noneConnected
 // For device read
-DS18B20({topic: "read_next", payload: okReading});  //  badReading
-DS18B20({topic: "read_next", payload: badReading});  //  badReading
+DS18B20({topic: "read_next", payload: okReading});  //  okReading/badReading
+//DS18B20({topic: "read_next", payload: badReading});  //  okReading/badReading
 
 function DS18B20 (msg) {
     // get last known devices and data from persistent flow storage.
@@ -143,7 +143,6 @@ function DS18B20 (msg) {
     function Devices(data) {
         let devs = String(data).split("\n").filter(zeroLength);
         //let objs = devs.filter(zeroLength).map(name => ({ name }));    //arr.forEach((element, index) => {
-        this.raw = data;                    //      obj[`key${index}`] = element;
         this.devices = [];                  //  });
         node.warn("data=" + data + " devices - 0.1 ");
 
@@ -183,6 +182,4 @@ function DS18B20 (msg) {
     function connected(dev) {
         return dev.connectionState === "CONNECTED";
     }
-
-    return;
 }
