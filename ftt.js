@@ -7,7 +7,7 @@ function node_send(arr){
 
 }
 function node_warn(str){
-    console.warn(str);
+    //console.warn(str);
 }
 let flow = {};
 function flow_get(id){
@@ -45,7 +45,8 @@ for each 'connected device'
 // Example calls
 // Lists of connected devices
 DS18B20({topic: "devices", payload: allConnected}); //  oneConnected/otherConnected/noneConnected
-//DS18B20({topic: "devices", payload: oneConnected}); //  oneConnected/otherConnected/noneConnected
+// next line is not reached OK now.
+DS18B20({topic: "devices", payload: oneConnected}); //  oneConnected/otherConnected/noneConnected
 //DS18B20({topic: "devices", payload: otherConnected}); //  oneConnected/otherConnected/noneConnected
 //DS18B20({topic: "devices", payload: noneConnected}); //  oneConnected/otherConnected/noneConnected
 // For device read
@@ -70,26 +71,26 @@ function DS18B20 (msg) {
 
             // Iterate over last known list of devices to see
             // if they are currently connected..
-            ft.forEach((name, index) => {
+            ft.forEach((name, index,arr) => {
                 node_warn("ft - name=" + JSON.stringify(name));
-debugger
+//debugger
                 if (currentlyConnected.filter(nameMatch).length === 0) {
                     // No longer connected
                     node_warn("ft dis");
                     name.connectionState = "DISCONNECTED";
-                    // TODO ERROR - name has the correct obj structure
+                    // FIXED TODO ERROR - name has the correct obj structure
                     // I can set name.connectionState
                     // but not name.status.lastUpdated
                     //{ "__enc__": true, "type": "error", "data": { "name": "TypeError", "message": "Cannot set properties of undefined (setting 'lastUpdated')", "stack": "TypeError: Cannot set properties of undefined (setting 'lastUpdated')\n    at Function node:d36d164207a7f518 [DS18B20]:47:33\n    at Array.forEach (<anonymous>)\n    at Function node:d36d164207a7f518 [DS18B20]:36:12\n    at Function node:d36d164207a7f518 [DS18B20]:421:3\n    at Script.runInContext (node:vm:149:12)\n    at processMessage (/usr/lib/node_modules/node-red/node_modules/@node-red/nodes/core/function/10-function.js:430:37)\n    at FunctionNode._inputCallback (/usr/lib/node_modules/node-red/node_modules/@node-red/nodes/core/function/10-function.js:348:17)\n    at /usr/lib/node_modules/node-red/node_modules/@node-red/runtime/lib/nodes/Node.js:214:26\n    at Object.trigger (/usr/lib/node_modules/node-red/node_modules/@node-red/util/lib/hooks.js:166:13)" } }
                     node_warn("ft dis2 " + JSON.stringify(name));
-                    let sta = ft[index].status;
-                    sta.lastUpdated = new Date();
+                    //(arr[index]).status.lastUpdated = new Date();
+                    name[Object.keys(name)[0]].status.lastUpdated = new Date();
                     node_warn("devices - 0.1");
                 }
 
                 function nameMatch(device) {
-                    //node_warn("nameMatch - device=" + JSON.stringify(device));
-                    device.name === name
+                    node_warn("nameMatch - device=" + JSON.stringify(device));
+                    device[Object.keys(device)[0]].name === name.name;
                 }
             })
             node_warn("devices - 1");
@@ -98,6 +99,7 @@ debugger
             // and create new ones.
             currentlyConnected.forEach((name) => {
                 node_warn("devices - 1-name=" + JSON.stringify(name));
+                // calling the next line disappears up its own
                 let known = ft.filter(nameMatch);
                 if (known.length === 0) {
                     node_warn("not found - 1");
@@ -106,11 +108,11 @@ debugger
                 } else {
                     node_warn("found  - 1=" + JSON.stringify(known));
                 }
-
                 function nameMatch(device) {
                     node_warn("nameMatch - device=" + JSON.stringify(device));
-                    device.name === name
+                    device[Object.keys(device)[0]].name === name;
                 }
+
             });
 
             node_warn("devices - 2");
